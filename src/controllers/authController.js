@@ -1,8 +1,8 @@
 // src/controllers/authController.js
 const bcrypt = require("bcryptjs");
-const prisma = require("../../utils/prisma");
-const { generateToken } = require("../../utils/jwt");
-const { success, error } = require("../../utils/response");
+const db = require("../utils/db");
+const { generateToken } = require("../utils/jwt");
+const { success, error } = require("../utils/response");
 
 const SALT_ROUNDS = 12;
 
@@ -12,7 +12,7 @@ const register = async (req, res, next) => {
     const { name, email, password } = req.body;
 
     // Verifica se o e-mail já está em uso
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await db.getUserByEmail(email);
     if (existingUser) {
       return error(res, "Este e-mail já está em uso.", 409);
     }
@@ -21,20 +21,16 @@ const register = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Cria o usuário
-    const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
-      select: { id: true, name: true, email: true, createdAt: true },
+    const user = await db.createUser({
+      name,
+      email,
+      password: hashedPassword,
     });
 
     // Gera o token imediatamente após o registro
     const token = generateToken({ id: user.id, email: user.email });
 
-    return success(
-      res,
-      { user, token },
-      "Conta criada com sucesso.",
-      201
-    );
+    return success(res, { user, token }, "Conta criada com sucesso.", 201);
   } catch (err) {
     next(err);
   }
@@ -46,7 +42,7 @@ const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     // Busca o usuário (inclui a senha para comparação)
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await db.getUserByEmail(email);
 
     // Mesmo que o usuário não exista, faz o compare para evitar timing attacks
     const passwordMatch = user

@@ -1,5 +1,5 @@
 // src/controllers/taskController.js
-const prisma = require("../utils/prisma");
+const db = require("../utils/db");
 const { success, error } = require("../utils/response");
 
 // ── Listar tarefas ────────────────────────────────────────────────────────────
@@ -9,21 +9,13 @@ const getTasks = async (req, res, next) => {
     const userId = req.user.id;
     const { status = "all" } = req.query;
 
-    // Monta o filtro de status
-    let completedFilter = {};
-    if (status === "active") completedFilter = { completed: false };
-    else if (status === "completed") completedFilter = { completed: true };
-
-    const tasks = await prisma.task.findMany({
-      where: { userId, ...completedFilter },
-      orderBy: { createdAt: "desc" },
-    });
+    const tasks = await db.getTasks(userId, status);
 
     // Estatísticas resumidas junto com a listagem
     const [total, completed, active] = await Promise.all([
-      prisma.task.count({ where: { userId } }),
-      prisma.task.count({ where: { userId, completed: true } }),
-      prisma.task.count({ where: { userId, completed: false } }),
+      db.countTasks(userId),
+      db.countTasks(userId, true),
+      db.countTasks(userId, false),
     ]);
 
     return success(res, {
@@ -42,9 +34,7 @@ const createTask = async (req, res, next) => {
     const userId = req.user.id;
     const { title } = req.body;
 
-    const task = await prisma.task.create({
-      data: { title: title.trim(), userId },
-    });
+    const task = await db.createTask(userId, title);
 
     return success(res, { task }, "Tarefa criada com sucesso.", 201);
   } catch (err) {
@@ -61,7 +51,7 @@ const updateTask = async (req, res, next) => {
     const { title, completed } = req.body;
 
     // Verifica se a tarefa existe e pertence ao usuário
-    const existing = await prisma.task.findFirst({ where: { id, userId } });
+    const existing = await db.findTaskByIdAndUser(id, userId);
     if (!existing) {
       return error(res, "Tarefa não encontrada.", 404);
     }
@@ -71,10 +61,7 @@ const updateTask = async (req, res, next) => {
     if (title !== undefined) dataToUpdate.title = title.trim();
     if (completed !== undefined) dataToUpdate.completed = completed;
 
-    const task = await prisma.task.update({
-      where: { id },
-      data: dataToUpdate,
-    });
+    const task = await db.updateTask(id, dataToUpdate);
 
     return success(res, { task }, "Tarefa atualizada com sucesso.");
   } catch (err) {
@@ -89,14 +76,13 @@ const toggleTask = async (req, res, next) => {
     const userId = req.user.id;
     const { id } = req.params;
 
-    const existing = await prisma.task.findFirst({ where: { id, userId } });
+    const existing = await db.findTaskByIdAndUser(id, userId);
     if (!existing) {
       return error(res, "Tarefa não encontrada.", 404);
     }
 
-    const task = await prisma.task.update({
-      where: { id },
-      data: { completed: !existing.completed },
+    const task = await db.updateTask(id, {
+      completed: !existing.completed,
     });
 
     const msg = task.completed
@@ -116,12 +102,12 @@ const deleteTask = async (req, res, next) => {
     const userId = req.user.id;
     const { id } = req.params;
 
-    const existing = await prisma.task.findFirst({ where: { id, userId } });
+    const existing = await db.findTaskByIdAndUser(id, userId);
     if (!existing) {
       return error(res, "Tarefa não encontrada.", 404);
     }
 
-    await prisma.task.delete({ where: { id } });
+    await db.deleteTask(id);
 
     return success(res, null, "Tarefa excluída com sucesso.");
   } catch (err) {

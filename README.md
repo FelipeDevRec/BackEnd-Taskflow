@@ -1,6 +1,6 @@
 # TaskFlow — Backend API
 
-API REST completa para o TaskFlow, construída com **Node.js + Express + PostgreSQL + Prisma**.
+API REST completa para o TaskFlow, construída com **Node.js + Express + Supabase (Postgres)**.
 
 ---
 
@@ -11,7 +11,7 @@ API REST completa para o TaskFlow, construída com **Node.js + Express + Postgre
 | Node.js ≥ 18 | Runtime |
 | Express.js | Framework HTTP |
 | PostgreSQL | Banco de dados |
-| Prisma ORM | Acesso ao banco + migrações |
+| Supabase | Postgres via HTTP client (recomendado para deploy remoto) |
 | JWT | Autenticação stateless |
 | bcryptjs | Hash seguro de senhas |
 | helmet | Segurança de headers HTTP |
@@ -26,9 +26,8 @@ API REST completa para o TaskFlow, construída com **Node.js + Express + Postgre
 
 ```
 taskflow-backend/
-├── prisma/
-│   ├── schema.prisma       # Modelos User e Task
-│   └── seed.js             # Dados iniciais de exemplo
+├── scripts/
+│   └── seed.js             # Script de seed (usa Supabase HTTP client)
 ├── src/
 │   ├── controllers/
 │   │   ├── authController.js   # register, login, me
@@ -42,7 +41,7 @@ taskflow-backend/
 │   │   └── tasks.js            # CRUD /tasks
 │   ├── utils/
 │   │   ├── jwt.js              # generateToken / verifyToken
-│   │   ├── prisma.js           # Singleton do Prisma Client
+│   │   ├── db.js               # Abstração do acesso ao banco (Supabase client)
 │   │   └── response.js         # Helpers success() / error()
 │   ├── app.js                  # Configuração do Express
 │   └── server.js               # Entry point
@@ -91,33 +90,19 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 psql -U postgres -c "CREATE DATABASE taskflow;"
 ```
 
-### 4. Rodar as migrações
+### 4. Criar tabelas no Supabase
+
+Use o arquivo `sql/create_tables.sql` e execute no editor SQL do seu projeto Supabase (Project > SQL) para criar as tabelas `users` e `tasks`.
+
+### 5. (Opcional) Popular o banco com dados de exemplo
 
 ```bash
-npm run db:migrate
-# Quando solicitado, dê um nome para a migration, ex: "init"
-```
-
-Isso cria as tabelas `users` e `tasks` no PostgreSQL.
-
-### 5. Gerar o Prisma Client
-
-```bash
-npm run db:generate
-```
-
-> **Nota:** `db:migrate` geralmente já roda o generate automaticamente.
-> Execute este passo separadamente apenas se necessário.
-
-### 6. (Opcional) Popular o banco com dados de exemplo
-
-```bash
-npm run db:seed
+npm run seed
 ```
 
 Cria o usuário `demo@taskflow.com` / `senha123` com 4 tarefas de exemplo.
 
-### 7. Iniciar o servidor
+### 6. Iniciar o servidor
 
 ```bash
 # Desenvolvimento (hot-reload com nodemon)
@@ -335,7 +320,7 @@ window.location.href = '/login.html';
 | Validação de entrada | express-validator em todos os endpoints |
 | CORS restrito | Apenas origens configuradas no .env |
 | Isolamento de dados | Cada usuário acessa apenas suas próprias tarefas |
-| Graceful shutdown | Fecha conexões do Prisma ao encerrar |
+| Graceful shutdown | Fecha conexões do banco ao encerrar |
 
 ---
 
@@ -345,8 +330,4 @@ window.location.href = '/login.html';
 |---|---|
 | `npm run dev` | Inicia em modo desenvolvimento com hot-reload |
 | `npm start` | Inicia em modo produção |
-| `npm run db:migrate` | Cria/atualiza tabelas no banco (dev) |
-| `npm run db:migrate:prod` | Aplica migrações em produção |
-| `npm run db:generate` | Regenera o Prisma Client |
-| `npm run db:studio` | Abre o Prisma Studio (interface visual do banco) |
-| `npm run db:seed` | Popula o banco com dados de exemplo |
+| `npm run seed` | Popula o projeto Supabase com dados de exemplo (executa `scripts/seed.js`) |

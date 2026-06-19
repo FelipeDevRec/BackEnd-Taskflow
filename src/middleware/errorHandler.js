@@ -12,20 +12,7 @@ const errorHandler = (err, req, res, next) => {
     method: req.method,
   });
 
-  // Erros do Prisma
-  if (err.code === "P2002") {
-    return res.status(409).json({
-      success: false,
-      message: "Já existe um registro com esses dados.",
-    });
-  }
-
-  if (err.code === "P2025") {
-    return res.status(404).json({
-      success: false,
-      message: "Registro não encontrado.",
-    });
-  }
+  // Tratamento genérico de erros de banco (duplicates / not found handled por código específico do provedor)
 
   // Erro genérico — nunca expõe detalhes em produção
   const statusCode = err.statusCode || 500;
