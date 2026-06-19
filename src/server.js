@@ -2,7 +2,7 @@
 require("dotenv").config();
 
 const app = require("./app");
-const prisma = require("./utils/prisma");
+const db = require("./utils/db");
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -10,7 +10,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 // ── Graceful Shutdown ─────────────────────────────────────────────────────────
 const shutdown = async (signal) => {
   console.log(`\n⚠️  ${signal} recebido. Encerrando servidor...`);
-  await prisma.$disconnect();
+  await db.disconnect();
   console.log("✅ Conexão com o banco encerrada.");
   process.exit(0);
 };
@@ -33,8 +33,13 @@ process.on("uncaughtException", (err) => {
 const start = async () => {
   try {
     // Testa a conexão com o banco antes de subir o servidor
-    await prisma.$connect();
-    console.log("✅ Conectado ao PostgreSQL via Prisma.");
+    await db.connect();
+
+    console.log(
+      db.useSupabase
+        ? "✅ Conectado ao Supabase via client HTTP."
+        : "✅ Nenhum cliente de banco configurado."
+    );
 
     app.listen(PORT, () => {
       console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

@@ -1,7 +1,7 @@
 // src/middleware/auth.js
 const { verifyToken } = require("../utils/jwt");
 const { error } = require("../utils/response");
-const prisma = require("../utils/prisma");
+const db = require("../utils/db");
 
 /**
  * Middleware de autenticação via JWT Bearer Token.
@@ -25,10 +25,7 @@ const authenticate = async (req, res, next) => {
     const decoded = verifyToken(token);
 
     // Busca o usuário no banco para garantir que ainda existe
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, name: true, email: true, createdAt: true },
-    });
+    const user = await db.getUserById(decoded.id);
 
     if (!user) {
       return error(res, "Usuário não encontrado ou token inválido.", 401);
