@@ -9,6 +9,19 @@ const rateLimit = require("express-rate-limit");
 const authRoutes = require("./routes/auth");
 const taskRoutes = require("./routes/tasks");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
+// Swagger
+const swaggerUi = require("swagger-ui-express");
+let openapiDocument;
+try {
+  openapiDocument = require("./docs/openapi.json");
+} catch (err) {
+  console.error('Warning: failed to load ./docs/openapi.json — serving minimal OpenAPI spec instead:', err.message);
+  openapiDocument = {
+    openapi: "3.0.3",
+    info: { title: "TaskFlow API", version: "1.0.0" },
+    paths: { "/health": { get: { responses: { "200": { description: "OK" } } } } }
+  };
+}
 
 const app = express();
 
@@ -80,6 +93,14 @@ app.get("/health", (req, res) => {
 // ── Rotas da API ──────────────────────────────────────────────────────────────
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/tasks", taskRoutes);
+
+// Swagger UI
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(openapiDocument, { explorer: true })
+);
+app.get('/api/docs/json', (req, res) => res.json(openapiDocument));
 
 // ── 404 e Tratamento Global de Erros ─────────────────────────────────────────
 app.use(notFound);
