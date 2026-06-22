@@ -1,4 +1,3 @@
-// src/middleware/auth.js
 const { verifyToken } = require("../utils/jwt");
 const { error } = require("../utils/response");
 const db = require("../utils/db");
@@ -21,10 +20,8 @@ const authenticate = async (req, res, next) => {
       return error(res, "Token de autenticação inválido.", 401);
     }
 
-    // Decodifica e valida o token
     const decoded = verifyToken(token);
 
-    // Busca o usuário no banco para garantir que ainda existe
     const user = await db.getUserById(decoded.id);
 
     if (!user) {

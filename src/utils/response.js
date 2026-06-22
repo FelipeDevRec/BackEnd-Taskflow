@@ -1,5 +1,3 @@
-// src/utils/response.js
-
 /**
  * Retorna uma resposta de sucesso padronizada.
  */
