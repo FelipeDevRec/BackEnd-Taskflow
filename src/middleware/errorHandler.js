@@ -1,5 +1,3 @@
-// src/middleware/errorHandler.js
-
 /**
  * Middleware global de tratamento de erros.
  * Deve ser registrado por ÚLTIMO no app.js, depois de todas as rotas.
@@ -12,9 +10,6 @@ const errorHandler = (err, req, res, next) => {
     method: req.method,
   });
 
-  // Tratamento genérico de erros de banco (duplicates / not found handled por código específico do provedor)
-
-  // Erro genérico — nunca expõe detalhes em produção
   const statusCode = err.statusCode || 500;
   const message =
     process.env.NODE_ENV === "production" && statusCode === 500
@@ -24,9 +19,6 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({ success: false, message });
 };
 
-/**
- * Handler para rotas não encontradas (404).
- */
 const notFound = (req, res) => {
   res.status(404).json({
     success: false,

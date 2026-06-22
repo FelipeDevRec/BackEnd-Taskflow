@@ -1,9 +1,7 @@
-// src/controllers/taskController.js
 const db = require("../utils/db");
 const { success, error } = require("../utils/response");
 
-// ── Listar tarefas ────────────────────────────────────────────────────────────
-// GET /api/tasks?status=all|active|completed
+
 const getTasks = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -11,7 +9,6 @@ const getTasks = async (req, res, next) => {
 
     const tasks = await db.getTasks(userId, status);
 
-    // Estatísticas resumidas junto com a listagem
     const [total, completed, active] = await Promise.all([
       db.countTasks(userId),
       db.countTasks(userId, true),
@@ -27,8 +24,6 @@ const getTasks = async (req, res, next) => {
   }
 };
 
-// ── Criar tarefa ──────────────────────────────────────────────────────────────
-// POST /api/tasks
 const createTask = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -42,21 +37,17 @@ const createTask = async (req, res, next) => {
   }
 };
 
-// ── Atualizar tarefa ──────────────────────────────────────────────────────────
-// PUT /api/tasks/:id
 const updateTask = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
     const { title, completed } = req.body;
 
-    // Verifica se a tarefa existe e pertence ao usuário
     const existing = await db.findTaskByIdAndUser(id, userId);
     if (!existing) {
       return error(res, "Tarefa não encontrada.", 404);
     }
 
-    // Monta os campos a atualizar (apenas os enviados)
     const dataToUpdate = {};
     if (title !== undefined) dataToUpdate.title = title.trim();
     if (completed !== undefined) dataToUpdate.completed = completed;
@@ -69,8 +60,6 @@ const updateTask = async (req, res, next) => {
   }
 };
 
-// ── Alternar status (concluída ↔ pendente) ────────────────────────────────────
-// PATCH /api/tasks/:id/toggle
 const toggleTask = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -95,8 +84,6 @@ const toggleTask = async (req, res, next) => {
   }
 };
 
-// ── Excluir tarefa ────────────────────────────────────────────────────────────
-// DELETE /api/tasks/:id
 const deleteTask = async (req, res, next) => {
   try {
     const userId = req.user.id;
